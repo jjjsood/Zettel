@@ -8,7 +8,7 @@ Versionen folgen [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Added
 - **CLI: Kunden, Angebote, Mahnungen.** `customer:create`, `offers`/`offer:{create,show,send,accept,reject,convert,pdf}`, `reminders`/`reminder:{create,send,pdf}`, `invoices --overdue`. PDFs für Rechnung, Angebot und Mahnung laufen über denselben Sidecar-Pfad.
-- **CLI im Installer.** `zettel` wird als Binary mitgeliefert (Linux: `/usr/bin/zettel` per `.deb`, Windows: `<Install>\cli\zettel.exe`); Pfad unter Einstellungen → Erweitert → Kommandozeile.
+- **CLI im Installer.** `zettel-cli` wird als Binary mitgeliefert (Linux: `/usr/bin/zettel-cli` per `.deb`, Windows: `<Install>\cli\zettel-cli.exe`); Pfad unter Einstellungen → Erweitert → Kommandozeile.
 - **CLI: `--json` und `--idempotency-key`.** Strukturierte Ausgabe (`{"ok": …}`) für Automatisierung; Wiederholungen mit gleichem Key legen keine Duplikate an. `-h` dokumentiert Ablauf, Formate und Grenzen so, dass ein LLM-Agent die CLI allein damit bedienen kann.
 
 ## [0.20.0]

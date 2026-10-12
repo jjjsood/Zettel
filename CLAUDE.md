@@ -33,7 +33,7 @@ Offline-first invoice generator for German freelancers / Kleinunternehmer. **Tau
 ### CLI (`cli/zettel.py`)
 - Headless-DB-Steuerung (stdlib-only) für Automatisierung; Befehle: `status`, `stats`, `customers`, `customer:create`, `invoices`, `invoice:{create,show,issue,pdf,paid}`, `offers`, `offer:{create,show,send,accept,reject,convert,pdf}`, `reminders`, `reminder:{create,send,pdf}`. Alle `*:create` mit `--idempotency-key`, global `--json`. `-h` ist die LLM-taugliche Referenz.
 - Repliziert App-Logik aus `invoices.ts`, `offers.ts`, `reminders.ts`, `queries.ts` (DRAFT-Placeholder, lazy Numbering, Per-Line-Rundung, Payment-Protokoll, PDF-Versionierung, Sidecar-RPC). **Bei Logik-Änderungen beide Stellen anfassen.**
-- Release: `cli/build.py` (PyInstaller onefile) → `cli/dist` → Resource `cli/` (`tauri.bundle.conf.json`); `.deb` symlinkt `/usr/bin/zettel` (`src-tauri/deb-postinst.sh`). Frozen findet den Sidecar unter `../sidecar/`; Rust-Command `cli_path` → Settings/Erweitert.
+- Release: `cli/build.py` (PyInstaller onefile) → `cli/dist` → Resource `cli/` (`tauri.bundle.conf.json`); `.deb` symlinkt `/usr/bin/zettel-cli` (`/usr/bin/zettel` = GUI!; `src-tauri/deb-postinst.sh`). Frozen findet den Sidecar unter `../sidecar/`; Rust-Command `cli_path` → Settings/Erweitert.
 - Test: `cli/test_zettel.py` (pytest, frische DB aus den Migrationen). Details: `cli/README.md`.
 
 ### Sidecar (`sidecar/`)

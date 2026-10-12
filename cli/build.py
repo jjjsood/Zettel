@@ -4,7 +4,7 @@ Build the Zettel CLI as a single-file executable (stdlib only, ~10 MB).
 Usage (from the repo root, with pyinstaller installed):
     python cli/build.py
 
-Output: cli/dist/zettel(.exe), bundled by tauri.bundle.conf.json to <install>/cli/.
+Output: cli/dist/zettel-cli(.exe), bundled by tauri.bundle.conf.json to <install>/cli/.
 At runtime the frozen CLI finds the PDF sidecar at ../sidecar/ (see resolve_sidecar).
 """
 import shutil
@@ -20,7 +20,7 @@ for d in (ROOT / "dist", ROOT / "build"):
 subprocess.run(
     [
         sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", "--onefile", "--console",
-        "--name", "zettel", "--specpath", str(ROOT / "build"), "--workpath", str(ROOT / "build"),
+        "--name", "zettel-cli", "--specpath", str(ROOT / "build"), "--workpath", str(ROOT / "build"),
         "--distpath", str(ROOT / "dist"), str(ROOT / "zettel.py"),
     ],
     check=True,

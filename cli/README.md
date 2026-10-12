@@ -16,12 +16,12 @@ Lesende Befehle sind unproblematisch.
 **Mit der installierten App (empfohlen):** Der Installer liefert die CLI als eigenes Binary mit
 (`cli/build.py`, PyInstaller, kein Python nötig). Sie findet den PDF-Sidecar der App selbst.
 
-- **Linux (.deb):** `zettel` liegt nach der Installation im PATH (`/usr/bin/zettel`).
-- **Windows:** `<Installationsordner>\cli\zettel.exe`; den Pfad zeigt Einstellungen → Erweitert
+- **Linux (.deb):** `zettel-cli` liegt nach der Installation im PATH (`/usr/bin/zettel-cli`; `/usr/bin/zettel` ist die GUI-App).
+- **Windows:** `<Installationsordner>\cli\zettel-cli.exe`; den Pfad zeigt Einstellungen → Erweitert
   → Kommandozeile (nicht im PATH).
 
 **Aus dem Repo:** `python cli/zettel.py …`. Die Beispiele unten nutzen diese Form; mit der
-installierten App einfach `zettel …`.
+installierten App einfach `zettel-cli …`.
 
 ## Befehle
 

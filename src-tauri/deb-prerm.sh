@@ -1,2 +1,2 @@
 #!/bin/sh
-rm -f /usr/bin/zettel
+rm -f /usr/bin/zettel-cli

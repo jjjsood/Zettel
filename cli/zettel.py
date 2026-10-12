@@ -1313,7 +1313,7 @@ TYPISCHER ABLAUF
   Angebot    offer:create -> offer:send -> offer:accept -> offer:convert (erzeugt Rechnungsentwurf)
   Mahnung    invoices --overdue -> reminder:create --invoice <id> --level 1 -> reminder:send / reminder:pdf
   Kunde      customer:create --name "ACME GmbH" --city Berlin   (Nummer K-0001 wird vergeben)
-  Beispiel   zettel invoice:create --customer K-0001 --items "Beratung|2|Std|90|19" \\
+  Beispiel   zettel-cli invoice:create --customer K-0001 --items "Beratung|2|Std|90|19" \\
                  --idempotency-key mai-beratung --json
 
 IDEMPOTENZ  (WICHTIG bei Automatisierung / Wiederholungen)
@@ -1350,7 +1350,7 @@ DATENBANK / UMGEBUNG
   AppData-Ordner. Sandbox-PDFs landen in ~/Documents/Zettel-Sandbox/<Rechnungen|Angebote|Mahnungen>.
   Nicht parallel zur laufenden App SCHREIBEN (SQLite single-writer, Timeout 10 s); Lesen ist unkritisch.
   PDF braucht den Sidecar: ZETTEL_SIDECAR=<Pfad zu zettel-sidecar(.exe)> oder installierte App bzw.
-  sidecar/.venv im Repo. `zettel status` zeigt, was gefunden wurde. Zuerst `status` aufrufen.
+  sidecar/.venv im Repo. `zettel-cli status` zeigt, was gefunden wurde. Zuerst `status` aufrufen.
 """
 
 
@@ -1359,7 +1359,7 @@ def main() -> None:
     json_help = "Ausgabe als ein JSON-Objekt (vor oder nach dem Befehl erlaubt)"
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("--json", dest="json_sub", action="store_true", help=json_help)
-    ap = argparse.ArgumentParser(prog="zettel", description=GUIDE, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(prog="zettel-cli", description=GUIDE, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--json", dest="json_top", action="store_true", help=json_help)
     sub = ap.add_subparsers(dest="cmd", required=True, metavar="BEFEHL")
 

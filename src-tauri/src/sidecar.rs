@@ -89,7 +89,7 @@ pub fn cli_path(app: AppHandle) -> Option<String> {
     if cfg!(debug_assertions) {
         return None;
     }
-    let exe_name = if cfg!(windows) { "zettel.exe" } else { "zettel" };
+    let exe_name = if cfg!(windows) { "zettel-cli.exe" } else { "zettel-cli" };
     let exe = app.path().resource_dir().ok()?.join("cli").join(exe_name);
     exe.exists()
         .then(|| crate::validator::simplify(exe).to_string_lossy().into_owned())

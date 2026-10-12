@@ -129,7 +129,7 @@
         </CardTitle>
         <CardDescription>
           Dieselben Daten per Terminal bedienen (Rechnungen, Angebote, Mahnungen, Kunden;
-          <code>--json</code> für Skripte/LLMs). Hilfe: <code>zettel -h</code>.
+          <code>--json</code> für Skripte/LLMs). Hilfe: <code>zettel-cli -h</code>.
         </CardDescription>
       </CardHeader>
       <CardContent class="flex items-center gap-2">
