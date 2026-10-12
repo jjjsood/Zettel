@@ -22,5 +22,7 @@ export function fromIsoDate(iso: string): number {
 }
 
 export function addDaysUnix(unixSeconds: number, days: number): number {
-  return unixSeconds + days * 86400;
+  const d = new Date(unixSeconds * 1000);
+  d.setDate(d.getDate() + days);
+  return Math.floor(d.getTime() / 1000);
 }

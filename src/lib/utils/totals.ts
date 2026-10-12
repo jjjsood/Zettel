@@ -23,6 +23,11 @@ export type TotalsOpts = {
   isReverseCharge: boolean;
 };
 
+/** Half away from zero, so a storno rounds to exactly the negative of its original (Math.round(-9.5) is -9). */
+export function roundHalfAway(v: number): number {
+  return v < 0 ? -Math.round(-v) : Math.round(v);
+}
+
 export function computeLineTotal(item: TotalsItem): number {
   return Math.round(item.quantity * item.unitPrice);
 }
@@ -35,7 +40,7 @@ export function computeTotals(items: TotalsItem[], opts: TotalsOpts): Totals {
     const line = computeLineTotal(item);
     subtotal += line;
     if (!vatExempt) {
-      vatAmount += Math.round((line * item.vatRate) / 100);
+      vatAmount += roundHalfAway((line * item.vatRate) / 100);
     }
   }
   return { subtotal, vatAmount, total: subtotal + vatAmount };

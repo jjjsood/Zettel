@@ -1,9 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { addDaysUnix, formatDate, fromIsoDate, nowUnix, toIsoDate } from "./date";
 
 describe("toIsoDate / fromIsoDate", () => {
   it("roundtrips at local midnight", () => {
     const iso = "2026-05-22";
+    expect(fromIsoDate(iso)).toBe(new Date(2026, 4, 22, 0, 0, 0).getTime() / 1000);
     expect(toIsoDate(fromIsoDate(iso))).toBe(iso);
   });
   it("zero-pads month and day", () => {
@@ -25,9 +26,10 @@ describe("fromIsoDate", () => {
 });
 
 describe("formatDate", () => {
-  it("formats as DD.MM.YYYY (de-DE)", () => {
-    const u = fromIsoDate("2026-05-22");
-    expect(formatDate(u)).toBe("22.5.2026");
+  it("formats as D.M.YYYY (de-DE, day and month not zero-padded)", () => {
+    expect(formatDate(fromIsoDate("2026-05-22"))).toBe("22.5.2026");
+    expect(formatDate(fromIsoDate("2026-01-05"))).toBe("5.1.2026");
+    expect(formatDate(fromIsoDate("2026-12-22"))).toBe("22.12.2026");
   });
 });
 
@@ -40,13 +42,23 @@ describe("addDaysUnix", () => {
     const base = fromIsoDate("2026-05-01");
     expect(toIsoDate(addDaysUnix(base, -1))).toBe("2026-04-30");
   });
-  it("crosses DST boundary cleanly (Berlin)", () => {
-    // 2026-03-29 02:00 → 03:00 CEST. addDaysUnix is pure-second math, so the
-    // ISO output can shift by 1h, but the date string at local midnight stays
-    // stable thanks to fromIsoDate using local-time constructor.
-    const base = fromIsoDate("2026-03-28");
-    const plus2 = addDaysUnix(base, 2);
-    expect(toIsoDate(plus2)).toBe("2026-03-30");
+});
+
+describe("addDaysUnix across DST (Europe/Berlin)", () => {
+  beforeAll(() => {
+    vi.stubEnv("TZ", "Europe/Berlin");
+  });
+  afterAll(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("spring forward: +2 days from local midnight stays at local midnight on the calendar date", () => {
+    const plus2 = addDaysUnix(fromIsoDate("2026-03-28"), 2);
+    expect(plus2).toBe(fromIsoDate("2026-03-30"));
+    expect(new Date(plus2 * 1000).getHours()).toBe(0);
+  });
+  it("fall back: +2 days from local midnight stays on the calendar date", () => {
+    expect(toIsoDate(addDaysUnix(fromIsoDate("2026-10-24"), 2))).toBe("2026-10-26");
   });
 });
 

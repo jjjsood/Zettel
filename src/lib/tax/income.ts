@@ -92,16 +92,16 @@ const TARIF_2025: Tarif = {
 const TARIF_2026: Tarif = {
   grundfreibetrag: 12_348,
   zone2End: 17_799,
-  zone3End: 69_798,
+  zone3End: 69_878,
   zone4End: 277_825,
   soliFreigrenze: 20_350,
-  z2a: 949.94,
+  z2a: 914.51,
   z2b: 1_400,
-  z3a: 173.30,
+  z3a: 173.10,
   z3b: 2_397,
-  z3c: 1_013.65,
-  z4Offset: 11_129.62,
-  z5Offset: 19_464.37,
+  z3c: 1_034.87,
+  z4Offset: 11_135.63,
+  z5Offset: 19_470.38,
 };
 
 const TARIFE: Record<TaxYear, Tarif> = {

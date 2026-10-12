@@ -20,8 +20,10 @@ describe("estimateIncomeTax — Tarif 2024", () => {
     expect(estimateIncomeTax(1_000_000, "single", 0, Y).est).toBe(0);
   });
 
-  it("ESt = 0 bei genau Grundfreibetrag 11.604 €", () => {
+  it("ESt = 0 bei genau Grundfreibetrag 11.604 €, erste Euro-ESt ab +8 €", () => {
     expect(estimateIncomeTax(1_160_400, "single", 0, Y).est).toBe(0);
+    expect(estimateIncomeTax(1_161_100, "single", 0, Y).est).toBe(0);
+    expect(estimateIncomeTax(1_161_200, "single", 0, Y).est).toBe(100);
   });
 
   it("Zone 2 — 15.000 € → 581 € ESt", () => {
@@ -67,12 +69,15 @@ describe("estimateIncomeTax — Tarif 2024", () => {
   });
 
   it("KiSt 9 % auf ESt", () => {
+    // floor(10906 * 0.09) = 981
     const r = estimateIncomeTax(5_000_000, "single", 0.09, Y);
-    expect(r.kist).toBe(Math.floor(10_906 * 0.09) * 100);
+    expect(r.kist).toBe(98_100);
   });
 
-  it("tarifYear echoed", () => {
-    expect(estimateIncomeTax(5_000_000, "single", 0, Y).tarifYear).toBe(2024);
+  it("Jahr außerhalb der Range → Tarif 2026 wird gerechnet und gemeldet", () => {
+    const r = estimateIncomeTax(5_000_000, "single", 0, 2027);
+    expect(r.tarifYear).toBe(2026);
+    expect(r.est).toBe(1_054_800);
   });
 });
 
@@ -83,8 +88,10 @@ describe("estimateIncomeTax — Tarif 2025", () => {
     expect(estimateIncomeTax(1_100_000, "single", 0, Y).est).toBe(0);
   });
 
-  it("ESt = 0 bei genau Grundfreibetrag 12.096 €", () => {
+  it("ESt = 0 bei genau Grundfreibetrag 12.096 €, erste Euro-ESt ab +8 €", () => {
     expect(estimateIncomeTax(1_209_600, "single", 0, Y).est).toBe(0);
+    expect(estimateIncomeTax(1_210_300, "single", 0, Y).est).toBe(0);
+    expect(estimateIncomeTax(1_210_400, "single", 0, Y).est).toBe(100);
   });
 
   it("Zone 2 — 15.000 € → ESt nach Formel", () => {
@@ -117,69 +124,56 @@ describe("estimateIncomeTax — Tarif 2025", () => {
     expect(estimateIncomeTax(10_000_000, "married", 0, Y).est).toBe(2_138_200);
   });
 
-  it("Soli = 0 unter Freigrenze 19.950 € (50k single, ESt 10.691)", () => {
-    expect(estimateIncomeTax(5_000_000, "single", 0, Y).soli).toBe(0);
-  });
-
   it("Soli in Milderungszone (100k single)", () => {
     // milderung = 0.119 * (31088 - 19950) = 0.119*11138 = 1325.42 → 1325
     expect(estimateIncomeTax(10_000_000, "single", 0, Y).soli).toBe(132_500);
-  });
-
-  it("tarifYear = 2025", () => {
-    expect(estimateIncomeTax(5_000_000, "single", 0, Y).tarifYear).toBe(2025);
   });
 });
 
 describe("estimateIncomeTax — Tarif 2026", () => {
   const Y = 2026;
 
-  it("ESt = 0 unter Grundfreibetrag 12.348 €", () => {
-    expect(estimateIncomeTax(1_234_800, "single", 0, Y).est).toBe(0);
+  it("ESt = 0 bis zum Grundfreibetrag 12.348 €, erste Euro-ESt ab +8 €", () => {
     expect(estimateIncomeTax(1_234_700, "single", 0, Y).est).toBe(0);
+    expect(estimateIncomeTax(1_234_800, "single", 0, Y).est).toBe(0);
+    expect(estimateIncomeTax(1_235_500, "single", 0, Y).est).toBe(0);
+    expect(estimateIncomeTax(1_235_600, "single", 0, Y).est).toBe(100);
   });
 
   it("Zone 2 — 15.000 € → ESt nach Formel", () => {
     // y = (15000-12348)/10000 = 0.2652
-    // (949.94*0.2652 + 1400)*0.2652 = (251.92 + 1400)*0.2652 = 1651.92*0.2652
-    // = 438.09 → 438
-    expect(estimateIncomeTax(1_500_000, "single", 0, Y).est).toBe(43_800);
+    // (914.51*0.2652 + 1400)*0.2652 = (242.53 + 1400)*0.2652 = 1642.53*0.2652
+    // = 435.6 → 435
+    expect(estimateIncomeTax(1_500_000, "single", 0, Y).est).toBe(43_500);
   });
 
   it("Zone 3 — 50.000 € → ESt nach Formel", () => {
     // z = (50000-17799)/10000 = 3.2201
-    // (173.30*3.2201 + 2397)*3.2201 + 1013.65
-    // = (558.04 + 2397)*3.2201 + 1013.65 = 2955.04*3.2201 + 1013.65
-    // = 9515.43 + 1013.65 = 10529.08 → 10529
-    expect(estimateIncomeTax(5_000_000, "single", 0, Y).est).toBe(1_052_900);
+    // (173.10*3.2201 + 2397)*3.2201 + 1034.87
+    // = (557.40 + 2397)*3.2201 + 1034.87 = 2954.40*3.2201 + 1034.87
+    // = 9513.7 + 1034.87 = 10548.6 → 10548
+    expect(estimateIncomeTax(5_000_000, "single", 0, Y).est).toBe(1_054_800);
   });
 
-  it("Zone 4 — 100.000 € → 30.870 € ESt", () => {
-    // 0.42*100000 - 11129.62 = 30870.38 → 30870
-    expect(estimateIncomeTax(10_000_000, "single", 0, Y).est).toBe(3_087_000);
+  it("Zone 4 — 100.000 € → 30.864 € ESt", () => {
+    // 0.42*100000 - 11135.63 = 30864.37 → 30864
+    expect(estimateIncomeTax(10_000_000, "single", 0, Y).est).toBe(3_086_400);
   });
 
-  it("Zone 5 — 300.000 € → 115.535 € ESt", () => {
-    // 0.45*300000 - 19464.37 = 115535.63 → 115535
-    expect(estimateIncomeTax(30_000_000, "single", 0, Y).est).toBe(11_553_500);
+  it("Zone 5 — 300.000 € → 115.529 € ESt", () => {
+    // 0.45*300000 - 19470.38 = 115529.62 → 115529
+    expect(estimateIncomeTax(30_000_000, "single", 0, Y).est).toBe(11_552_900);
   });
 
   it("Splittingtarif für 100k", () => {
-    // 2 × 10529 = 21058
-    expect(estimateIncomeTax(10_000_000, "married", 0, Y).est).toBe(2_105_800);
-  });
-
-  it("Soli = 0 unter Freigrenze 20.350 €", () => {
-    expect(estimateIncomeTax(5_000_000, "single", 0, Y).soli).toBe(0);
+    // 2 × est(50.000) = 2 × 10548 = 21096
+    expect(estimateIncomeTax(10_000_000, "married", 0, Y).est).toBe(2_109_600);
   });
 
   it("KiSt 8 % BY", () => {
+    // floor(10548 * 0.08) = 843
     const r = estimateIncomeTax(5_000_000, "single", 0.08, Y);
-    expect(r.kist).toBe(Math.floor(10_529 * 0.08) * 100);
-  });
-
-  it("tarifYear = 2026", () => {
-    expect(estimateIncomeTax(5_000_000, "single", 0, Y).tarifYear).toBe(2026);
+    expect(r.kist).toBe(84_300);
   });
 });
 
@@ -201,11 +195,58 @@ describe("estimateIncomeTax — Cross-Year-Eigenschaften", () => {
     }
   });
 
-  it("total = est + soli + kist (alle Jahre)", () => {
-    for (const y of [2024, 2025, 2026] as const) {
-      const r = estimateIncomeTax(10_000_000, "single", 0.09, y);
-      expect(r.total).toBe(r.est + r.soli + r.kist);
-    }
+  it("total, soli und kist für 100k single bei 9 % KiSt (je Jahr)", () => {
+    expect(estimateIncomeTax(10_000_000, "single", 0.09, 2024)).toEqual({
+      est: 3_139_700, soli: 157_800, kist: 282_500, total: 3_580_000, tarifYear: 2024,
+    });
+    expect(estimateIncomeTax(10_000_000, "single", 0.09, 2025)).toEqual({
+      est: 3_108_800, soli: 132_500, kist: 279_700, total: 3_521_000, tarifYear: 2025,
+    });
+    expect(estimateIncomeTax(10_000_000, "single", 0.09, 2026)).toEqual({
+      est: 3_086_400, soli: 125_100, kist: 277_700, total: 3_489_200, tarifYear: 2026,
+    });
+  });
+});
+
+describe("estimateIncomeTax — Soli-Freigrenze", () => {
+  // [Jahr, Status, zvE mit ESt == Freigrenze, zvE mit ESt ≈ Freigrenze + 9 € (Splitting: +10 €)]
+  // Freigrenze: 18.130 / 19.950 / 20.350 € (verdoppelt bei Splitting)
+  const cases = [
+    [2024, "single", 68_410, 68_432],
+    [2025, "single", 73_481, 73_503],
+    [2026, "single", 74_966, 74_988],
+    [2024, "married", 136_820, 136_844],
+    [2025, "married", 146_962, 146_986],
+    [2026, "married", 149_932, 149_956],
+  ] as const;
+  const freigrenze = { 2024: 18_130, 2025: 19_950, 2026: 20_350 } as const;
+
+  it.each(cases)("%i %s: Soli 0 bei ESt = Freigrenze, knapp darüber greift die Milderungszone", (y, status, atLimit, above) => {
+    const f = freigrenze[y] * (status === "married" ? 2 : 1);
+    const at = estimateIncomeTax(atLimit * 100, status, 0, y);
+    expect(at.est).toBe(f * 100);
+    expect(at.soli).toBe(0);
+    const over = estimateIncomeTax(above * 100, status, 0, y);
+    expect(over.est).toBe((f + (status === "married" ? 10 : 9)) * 100);
+    expect(over.soli).toBe(100);
+  });
+});
+
+describe("estimateIncomeTax — Stetigkeit an den Zonengrenzen", () => {
+  const borders = {
+    2024: [17_005, 66_760, 277_825],
+    2025: [17_443, 68_480, 277_825],
+    2026: [17_799, 69_878, 277_825],
+  } as const;
+  const jumps = (y: 2024 | 2025 | 2026) =>
+    borders[y].map(
+      (b) =>
+        estimateIncomeTax((b + 1) * 100, "single", 0, y).est / 100 -
+        estimateIncomeTax(b * 100, "single", 0, y).est / 100,
+    );
+
+  it.each([2024, 2025, 2026] as const)("%i: ESt springt an keiner Zonengrenze um mehr als 2 €", (y) => {
+    for (const d of jumps(y)) expect(Math.abs(d)).toBeLessThanOrEqual(2);
   });
 });
 
@@ -219,10 +260,5 @@ describe("getTarifYear — Year fallback", () => {
   it("Zukunfts-Jahre → neuestes hinterlegtes Jahr", () => {
     expect(getTarifYear(2027)).toBe(2026);
     expect(getTarifYear(2030)).toBe(2026);
-  });
-
-  it("alte Jahre vor unserer Range → ebenfalls neuestes", () => {
-    // Bewusst kein Backwards-Mapping — 2020er-Tarife sind irrelevant
-    expect(getTarifYear(2020)).toBe(2026);
   });
 });

@@ -56,7 +56,7 @@ describe("computeSkonto", () => {
 });
 
 describe("formatSkontoLineDe", () => {
-  it("produces the expected German line", () => {
+  it("composes the German line from the injected formatters", () => {
     const r = {
       discountCent: 17850,
       deadlineUnix: ISSUE + 7 * 86400,
@@ -68,7 +68,6 @@ describe("formatSkontoLineDe", () => {
       (c) => `${(c / 100).toFixed(2).replace(".", ",")} €`,
       (u) => new Date(u * 1000).toISOString().slice(0, 10),
     );
-    expect(line).toContain("3 % Skonto");
-    expect(line).toContain("178,50 €");
+    expect(line).toBe("Bei Zahlung bis 2024-05-08: 3 % Skonto = 178,50 €");
   });
 });

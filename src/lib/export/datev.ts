@@ -13,6 +13,7 @@
  * kann das beim Schreiben übersetzen.
  */
 import type { Expense, ExpenseItem, Invoice, InvoiceItem } from "$lib/db/schema";
+import { roundHalfAway } from "$lib/utils/totals";
 
 export type DatevAccountMap = {
   /** Sammel-Debitor (Forderungen aus Lieferungen und Leistungen). */
@@ -190,7 +191,7 @@ function bookingsForInvoice(input: DatevInvoiceInput, accounts: DatevAccountMap)
   for (const it of items) {
     const effectiveRate = isKu || isRc ? 0 : it.vatRate;
     const net = it.lineTotal;
-    const vat = isKu || isRc ? 0 : Math.round((net * it.vatRate) / 100);
+    const vat = isKu || isRc ? 0 : roundHalfAway((net * it.vatRate) / 100);
     const g = groups.get(effectiveRate) ?? { net: 0, vat: 0 };
     g.net += net;
     g.vat += vat;
@@ -286,7 +287,7 @@ function bookingsForExpense(input: DatevExpenseInput, accounts: DatevAccountMap)
       : expenseAccountFor(it.vatRate, isRc, accounts);
     const effectiveRate = isRc ? 0 : it.vatRate;
     const net = it.lineTotal;
-    const vat = isRc ? 0 : Math.round((net * it.vatRate) / 100);
+    const vat = isRc ? 0 : roundHalfAway((net * it.vatRate) / 100);
     const key = `${account}|${effectiveRate}`;
     const g = groups.get(key) ?? { account, rate: effectiveRate, net: 0, vat: 0 };
     g.net += net;
