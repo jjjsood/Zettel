@@ -31,9 +31,9 @@ Offline-first invoice generator for German freelancers / Kleinunternehmer. **Tau
 - `accent.rs` — Accent-Color-Reader (Windows-Registry).
 
 ### CLI (`cli/zettel.py`)
-- Headless-DB-Steuerung (stdlib-only) für Automatisierung; Befehle: `status`, `customers`, `invoices`, `invoice:{create,show,issue,pdf,paid}`, `stats`.
-- Repliziert App-Logik aus `invoices.ts` (DRAFT-Placeholder, lazy Numbering, Per-Line-Rundung, Payment-Protokoll, PDF-Versionierung, Sidecar-RPC). **Bei Logik-Änderungen beide Stellen anfassen.**
-- Details: `cli/README.md`.
+- Headless-DB-Steuerung (stdlib-only) für Automatisierung; Befehle: `status`, `stats`, `customers`, `customer:create`, `invoices`, `invoice:{create,show,issue,pdf,paid}`, `offers`, `offer:{create,show,send,accept,reject,convert,pdf}`, `reminders`, `reminder:{create,send,pdf}`. Alle `*:create` mit `--idempotency-key`, global `--json`. `-h` ist die LLM-taugliche Referenz.
+- Repliziert App-Logik aus `invoices.ts`, `offers.ts`, `reminders.ts`, `queries.ts` (DRAFT-Placeholder, lazy Numbering, Per-Line-Rundung, Payment-Protokoll, PDF-Versionierung, Sidecar-RPC). **Bei Logik-Änderungen beide Stellen anfassen.**
+- Test: `cli/test_zettel.py` (pytest, frische DB aus den Migrationen). Details: `cli/README.md`.
 
 ### Sidecar (`sidecar/`)
 - `main.py` — JSON-RPC-Loop über stdin/stdout. `_add_gtk_dll_path` lookup: frozen → exe-dir → `C:\Program Files\GTK3-Runtime Win64\` → msys64. Override via `ZETTEL_GTK_PATH`.
