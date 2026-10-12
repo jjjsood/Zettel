@@ -11,6 +11,18 @@ sonst aktiver Tenant aus `tenants.json`, sonst Standard-`zettel.db`.
 **Nicht parallel zur laufenden App schreiben** (SQLite single-writer).
 Lesende Befehle sind unproblematisch.
 
+## Installation
+
+**Mit der installierten App (empfohlen):** Der Installer liefert die CLI als eigenes Binary mit
+(`cli/build.py`, PyInstaller, kein Python nötig). Sie findet den PDF-Sidecar der App selbst.
+
+- **Linux (.deb):** `zettel` liegt nach der Installation im PATH (`/usr/bin/zettel`).
+- **Windows:** `<Installationsordner>\cli\zettel.exe`; den Pfad zeigt Einstellungen → Erweitert
+  → Kommandozeile (nicht im PATH).
+
+**Aus dem Repo:** `python cli/zettel.py …`. Die Beispiele unten nutzen diese Form; mit der
+installierten App einfach `zettel …`.
+
 ## Befehle
 
 ```

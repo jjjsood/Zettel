@@ -14,7 +14,9 @@
     Dialog,
     toast,
   } from "$lib/ui";
-  import { AlertTriangle } from "@lucide/svelte";
+  import { AlertTriangle, Terminal } from "@lucide/svelte";
+  import { invoke } from "@tauri-apps/api/core";
+  import { onMount } from "svelte";
   import {
     autoBackupBeforeWipe,
     resetNumberingCounters,
@@ -25,6 +27,11 @@
   } from "$lib/db/danger";
 
   const CURRENT_DB_SCHEMA_VERSION = 26;
+
+  let cliPath = $state<string | null>(null);
+  onMount(async () => {
+    cliPath = await invoke<string | null>("cli_path").catch(() => null);
+  });
 
   type DangerAction =
     | { kind: "wipeAll" }
@@ -113,6 +120,31 @@
   title="Erweitert"
   description="Gefahrenzone — irreversible Aktionen auf den Geschäftsdaten."
 >
+  {#if cliPath}
+    <Card class="mb-6">
+      <CardHeader>
+        <CardTitle class="flex items-center gap-2">
+          <Terminal class="size-5" />
+          Kommandozeile
+        </CardTitle>
+        <CardDescription>
+          Dieselben Daten per Terminal bedienen (Rechnungen, Angebote, Mahnungen, Kunden;
+          <code>--json</code> für Skripte/LLMs). Hilfe: <code>zettel -h</code>.
+        </CardDescription>
+      </CardHeader>
+      <CardContent class="flex items-center gap-2">
+        <code class="flex-1 truncate rounded bg-muted px-2 py-1 text-xs">{cliPath}</code>
+        <Button
+          variant="outline"
+          size="sm"
+          onclick={() => navigator.clipboard.writeText(cliPath!).then(() => toast.success("Pfad kopiert"))}
+        >
+          Kopieren
+        </Button>
+      </CardContent>
+    </Card>
+  {/if}
+
   <Card class="border-destructive/40">
     <CardHeader>
       <CardTitle class="flex items-center gap-2 text-destructive">

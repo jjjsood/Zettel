@@ -71,7 +71,7 @@ fn workspace_jre_dir() -> PathBuf {
 /// Strip the Windows verbatim prefix (`\\?\`) from a path. `resource_dir()`
 /// returns verbatim paths, which the JVM rejects when they appear as a
 /// `-jar` argument. No-op on non-Windows and on already-simple paths.
-fn simplify(p: PathBuf) -> PathBuf {
+pub(crate) fn simplify(p: PathBuf) -> PathBuf {
     #[cfg(windows)]
     {
         let s = p.to_string_lossy();

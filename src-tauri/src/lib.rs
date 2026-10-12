@@ -202,6 +202,7 @@ pub fn run() {
             sidecar::extract_text_pdf,
             sidecar::generate_reminder,
             sidecar::parse_bank_statement,
+            sidecar::cli_path,
             fs_export::save_text_file,
             fs_export::import_expense_pdf,
             fs_export::archive_pdf_version,
