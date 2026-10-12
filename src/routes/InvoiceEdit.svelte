@@ -3,21 +3,18 @@
   import { invoke } from "@tauri-apps/api/core";
   import { listCustomers, loadSettings } from "$lib/db/queries";
   import {
-    computeLineTotal,
     computeTotals,
     createInvoice,
     getInvoice,
     updateInvoice,
     type InvoiceFormInput,
-    type InvoiceItemInput,
     type ReverseChargeType,
   } from "$lib/db/invoices";
   import type { Customer, Settings } from "$lib/db/schema";
-  import { centsToEur, eurStringToCents } from "$lib/utils/money";
+  import { centsToEur } from "$lib/utils/money";
   import {
     SUPPORTED_CURRENCIES,
     computeEurTotalCent,
-    formatMoney,
     parseExchangeRateScaled,
   } from "$lib/utils/currency";
   import {
@@ -33,16 +30,13 @@
     Label,
     Card,
     CardContent,
-    CatalogPicker,
     Checkbox,
     DatePicker,
-    LinePeriodPopover,
     Select,
     toast,
   } from "$lib/ui";
-  import { ArrowLeft, Plus, Trash2, AlertTriangle, CalendarRange, FileText, X, Package, GripVertical, ChevronUp, ChevronDown } from "@lucide/svelte";
-  import { flip } from "svelte/animate";
-  import type { CatalogItem } from "$lib/db/schema";
+  import { ArrowLeft, AlertTriangle, CalendarRange, X } from "@lucide/svelte";
+  import LineItemsEditor, { emptyItem, toLineItem, type LineItem } from "$lib/components/LineItemsEditor.svelte";
 
   type Props = {
     mode: "new" | "edit";
@@ -74,32 +68,7 @@
   let isCreditNote = $state(false);
   let correctsInvoiceId = $state<number | null>(null);
 
-  type ItemUI = InvoiceItemInput & {
-    uid: number;
-    priceText: string;
-    longDescription: string;
-    periodStartIso: string;
-    periodEndIso: string;
-    showDetail: boolean;
-  };
-  // Stable per-row id so keyed {#each} + animate:flip survive reordering.
-  let itemUid = 0;
-  function emptyItem(vatRate = 0): ItemUI {
-    return {
-      uid: ++itemUid,
-      description: "",
-      quantity: 1,
-      unit: "Stk",
-      unitPrice: 0,
-      vatRate,
-      priceText: "",
-      longDescription: "",
-      periodStartIso: "",
-      periodEndIso: "",
-      showDetail: false,
-    };
-  }
-  let items = $state<ItemUI[]>([emptyItem()]);
+  let items = $state<LineItem[]>([emptyItem()]);
   let currency = $state<string>("EUR");
   let exchangeRate = $state<string>("");
   let fetchingRate = $state(false);
@@ -244,89 +213,12 @@
             skontoDays = res.invoice.skontoDays;
           }
           pdfLanguage = (res.invoice.pdfLanguage ?? "de") as "de" | "en";
-          items = res.items.map((it) => ({
-            uid: ++itemUid,
-            description: it.description,
-            quantity: it.quantity,
-            unit: it.unit,
-            unitPrice: it.unitPrice,
-            vatRate: it.vatRate,
-            priceText: (it.unitPrice / 100).toFixed(2).replace(".", ","),
-            longDescription: it.longDescription ?? "",
-            periodStartIso: it.linePeriodStart ? toIsoDate(it.linePeriodStart) : "",
-            periodEndIso: it.linePeriodEnd ? toIsoDate(it.linePeriodEnd) : "",
-            showDetail: !!it.longDescription,
-          }));
+          items = res.items.map(toLineItem);
         })
         .catch((e) => (error = String(e)))
         .finally(() => (loaded = true));
     }
   });
-
-  function addItem() {
-    items = [...items, emptyItem(settings?.isKleinunternehmer ? 0 : 19)];
-  }
-
-  let catalogPickerOpen = $state(false);
-  function addFromCatalog(it: CatalogItem) {
-    const vatRate = vatExempt ? 0 : it.defaultVatRate;
-    const next = emptyItem(vatRate);
-    next.description = it.name;
-    next.quantity = 1;
-    next.unit = it.unit;
-    next.unitPrice = it.defaultUnitPrice;
-    next.priceText = (it.defaultUnitPrice / 100).toFixed(2).replace(".", ",");
-    const desc = pdfLanguage === "en" && it.descriptionEn ? it.descriptionEn : it.descriptionDe;
-    if (desc) {
-      next.longDescription = desc;
-      next.showDetail = true;
-    }
-    items = [...items, next];
-  }
-
-  function removeItem(idx: number) {
-    items = items.filter((_, i) => i !== idx);
-  }
-
-  function moveItem(from: number, to: number) {
-    if (from === to || to < 0 || to >= items.length) return;
-    const next = [...items];
-    const [moved] = next.splice(from, 1);
-    next.splice(to, 0, moved);
-    items = next;
-  }
-  function moveUp(idx: number) {
-    moveItem(idx, idx - 1);
-  }
-  function moveDown(idx: number) {
-    moveItem(idx, idx + 1);
-  }
-
-  let dragIndex = $state<number | null>(null);
-  let dragOverIndex = $state<number | null>(null);
-  function onDragStart(idx: number) {
-    dragIndex = idx;
-  }
-  function onDragOver(e: DragEvent, idx: number) {
-    e.preventDefault();
-    dragOverIndex = idx;
-  }
-  function onDrop(idx: number) {
-    if (dragIndex !== null) moveItem(dragIndex, idx);
-    dragIndex = null;
-    dragOverIndex = null;
-  }
-  function onDragEnd() {
-    dragIndex = null;
-    dragOverIndex = null;
-  }
-
-  function onPriceBlur(idx: number) {
-    const it = items[idx];
-    it.unitPrice = eurStringToCents(it.priceText);
-    it.priceText = (it.unitPrice / 100).toFixed(2).replace(".", ",");
-    items = [...items];
-  }
 
   const totals = $derived.by(() => {
     if (!settings) return { subtotal: 0, vatAmount: 0, total: 0 };
@@ -473,12 +365,6 @@
   function onCancel() {
     push("/invoices");
   }
-
-  const vatItems = [
-    { value: "0", label: "0 %" },
-    { value: "7", label: "7 %" },
-    { value: "19", label: "19 %" },
-  ];
 </script>
 
 <header class="mb-6">
@@ -637,205 +523,16 @@
       </CardContent>
     </Card>
 
-    <section>
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="text-sm font-semibold uppercase text-muted-foreground tracking-wider">
-          Positionen
-        </h2>
-        <div class="inline-flex items-center gap-2">
-          <Button type="button" size="sm" variant="outline" onclick={() => (catalogPickerOpen = true)}>
-            <Package />
-            Aus Katalog…
-          </Button>
-          <Button type="button" size="sm" variant="outline" onclick={addItem}>
-            <Plus />
-            Position
-          </Button>
-        </div>
-      </div>
-      <Card class="overflow-hidden py-0">
-        <table class="w-full text-sm">
-          <thead class="bg-muted/40 text-left">
-            <tr class="text-xs uppercase tracking-wider text-muted-foreground">
-              <th class="px-3 py-2 w-14 font-medium">#</th>
-              <th class="px-3 py-2 font-medium">Beschreibung</th>
-              <th class="px-3 py-2 w-20 font-medium">Menge</th>
-              <th class="px-3 py-2 w-20 font-medium">Einheit</th>
-              <th class="px-3 py-2 w-28 font-medium">Preis ({currency})</th>
-              {#if !vatExempt}
-                <th class="px-3 py-2 w-24 font-medium">USt</th>
-              {/if}
-              <th class="px-3 py-2 w-28 font-medium text-right">Summe</th>
-              <th class="px-3 py-2 w-24 font-medium"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {#each items as it, idx (it.uid)}
-              <tr
-                class="border-t {dragOverIndex === idx && dragIndex !== idx ? 'bg-accent/40' : ''}"
-                class:opacity-50={dragIndex === idx}
-                animate:flip={{ duration: 150 }}
-                ondragover={(e) => onDragOver(e, idx)}
-                ondrop={() => onDrop(idx)}
-              >
-                <td class="px-2 py-2 align-top">
-                  <div class="flex items-center gap-1">
-                    <button
-                      type="button"
-                      draggable="true"
-                      ondragstart={() => onDragStart(idx)}
-                      ondragend={onDragEnd}
-                      class="cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-foreground transition-colors"
-                      title="Ziehen zum Sortieren"
-                      aria-label="Position verschieben"
-                    >
-                      <GripVertical class="size-4" />
-                    </button>
-                    <span class="text-xs text-muted-foreground tabular-nums">{idx + 1}</span>
-                  </div>
-                </td>
-                <td class="px-2 py-1.5">
-                  <Input bind:value={it.description} required />
-                  {#if it.showDetail}
-                    <div class="mt-1.5">
-                      <Textarea
-                        rows={2}
-                        placeholder="Detail-Beschreibung (BT-154) — z. B. Sub-Leistungen, Spezifikation"
-                        bind:value={it.longDescription}
-                      />
-                    </div>
-                  {/if}
-                  <div class="mt-1.5 flex flex-wrap gap-1.5">
-                    <LinePeriodPopover
-                      bind:startIso={it.periodStartIso}
-                      bind:endIso={it.periodEndIso}
-                    />
-                    {#if it.showDetail}
-                      <button
-                        type="button"
-                        class="inline-flex items-center gap-1 rounded-md border border-input bg-transparent px-2 h-7 text-xs text-muted-foreground hover:bg-accent hover:text-destructive transition-colors cursor-pointer"
-                        onclick={() => {
-                          it.showDetail = false;
-                          it.longDescription = "";
-                          items = [...items];
-                        }}
-                      >
-                        <X class="size-3" /> Detail entfernen
-                      </button>
-                    {:else}
-                      <button
-                        type="button"
-                        class="inline-flex items-center gap-1 rounded-md border border-input bg-transparent px-2 h-7 text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors cursor-pointer"
-                        onclick={() => {
-                          it.showDetail = true;
-                          items = [...items];
-                        }}
-                      >
-                        <FileText class="size-3" /> Detail-Beschreibung
-                      </button>
-                    {/if}
-                  </div>
-                </td>
-                <td class="px-2 py-1.5 align-top pt-1.5">
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    bind:value={it.quantity}
-                  />
-                </td>
-                <td class="px-2 py-1.5 align-top pt-1.5">
-                  <Input bind:value={it.unit} />
-                </td>
-                <td class="px-2 py-1.5 align-top pt-1.5">
-                  <Input
-                    bind:value={it.priceText}
-                    onblur={() => onPriceBlur(idx)}
-                    placeholder="0,00"
-                    class="text-right"
-                  />
-                </td>
-                {#if !vatExempt}
-                  <td class="px-2 py-1.5 align-top pt-1.5">
-                    <Select
-                      bind:value={
-                        () => String(it.vatRate),
-                        (v) => {
-                          it.vatRate = Number.parseInt(v, 10);
-                          items = [...items];
-                        }
-                      }
-                      items={vatItems}
-                    />
-                  </td>
-                {/if}
-                <td class="px-3 py-2 text-right font-mono text-xs align-top pt-3">
-                  {formatMoney(computeLineTotal(it), currency)}
-                </td>
-                <td class="px-2 py-1.5 text-right align-top pt-1.5">
-                  <div class="inline-flex items-center gap-0.5">
-                    <div class="flex flex-col">
-                      <button
-                        type="button"
-                        onclick={() => moveUp(idx)}
-                        disabled={idx === 0}
-                        class="inline-flex items-center justify-center size-5 rounded text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-20 disabled:pointer-events-none transition-colors"
-                        title="Nach oben"
-                        aria-label="Position nach oben"
-                      >
-                        <ChevronUp class="size-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onclick={() => moveDown(idx)}
-                        disabled={idx === items.length - 1}
-                        class="inline-flex items-center justify-center size-5 rounded text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-20 disabled:pointer-events-none transition-colors"
-                        title="Nach unten"
-                        aria-label="Position nach unten"
-                      >
-                        <ChevronDown class="size-3.5" />
-                      </button>
-                    </div>
-                    <button
-                      type="button"
-                      onclick={() => removeItem(idx)}
-                      disabled={items.length === 1}
-                      class="inline-flex items-center justify-center size-8 rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-30 disabled:pointer-events-none transition-colors"
-                      title="Position entfernen"
-                    >
-                      <Trash2 class="size-4" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            {/each}
-          </tbody>
-          <tfoot class="bg-muted/40 text-sm">
-            <tr class="border-t">
-              <td colspan={vatExempt ? 5 : 6} class="px-3 py-2 text-right text-muted-foreground">
-                Zwischensumme
-              </td>
-              <td class="px-3 py-2 text-right font-mono">{formatMoney(totals.subtotal, currency)}</td>
-              <td></td>
-            </tr>
-            {#if !vatExempt}
-              <tr>
-                <td colspan="6" class="px-3 py-2 text-right text-muted-foreground">USt</td>
-                <td class="px-3 py-2 text-right font-mono">{formatMoney(totals.vatAmount, currency)}</td>
-                <td></td>
-              </tr>
-            {/if}
-            <tr class="border-t">
-              <td colspan={vatExempt ? 5 : 6} class="px-3 py-2 text-right font-semibold">
-                Gesamtbetrag
-              </td>
-              <td class="px-3 py-2 text-right font-mono font-semibold">{formatMoney(totals.total, currency)}</td>
-              <td></td>
-            </tr>
-          </tfoot>
-        </table>
-      </Card>
-    </section>
+    <LineItemsEditor
+      bind:items
+      {totals}
+      {vatExempt}
+      {currency}
+      context="invoice"
+      language={pdfLanguage}
+      reorderable
+      detailPlaceholder="Detail-Beschreibung (BT-154) — z. B. Sub-Leistungen, Spezifikation"
+    />
 
     <Card>
       <CardContent class="space-y-4">
@@ -911,4 +608,3 @@
   </form>
 {/if}
 
-<CatalogPicker bind:open={catalogPickerOpen} onPick={addFromCatalog} context="invoice" language={pdfLanguage} />

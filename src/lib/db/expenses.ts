@@ -433,24 +433,3 @@ export async function loadExpensesForExport(
     };
   });
 }
-
-// --- Aggregates for dashboard ---
-
-export async function sumOpenExpenses(): Promise<{ count: number; total: number }> {
-  const rows = await select<{ c: number; t: number | null }>(
-    "SELECT COUNT(*) AS c, COALESCE(SUM(total), 0) AS t FROM expenses WHERE status = 'open'",
-  );
-  return { count: rows[0]?.c ?? 0, total: rows[0]?.t ?? 0 };
-}
-
-export async function sumExpensesYtd(year?: number): Promise<number> {
-  const y = year ?? new Date().getFullYear();
-  const start = Math.floor(new Date(y, 0, 1).getTime() / 1000);
-  const end = Math.floor(new Date(y + 1, 0, 1).getTime() / 1000);
-  const rows = await select<{ t: number | null }>(
-    `SELECT COALESCE(SUM(total), 0) AS t FROM expenses
-     WHERE status = 'paid' AND paid_date >= ? AND paid_date < ?`,
-    [start, end],
-  );
-  return rows[0]?.t ?? 0;
-}

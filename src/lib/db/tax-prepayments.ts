@@ -57,11 +57,3 @@ export async function sumPrepaymentsForYear(year: number): Promise<number> {
   );
   return rows[0]?.total ?? 0;
 }
-
-/** Liste der Jahre, für die irgendein Eintrag existiert. */
-export async function listPrepaymentYears(): Promise<number[]> {
-  const rows = await select<{ year: number }>(
-    `SELECT DISTINCT year FROM tax_prepayments ORDER BY year DESC`,
-  );
-  return rows.map((r) => r.year);
-}

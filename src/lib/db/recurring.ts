@@ -1,7 +1,6 @@
 import { execute, select } from "./client";
 import { createInvoice } from "./invoices";
 import type {
-  InvoiceItem,
   RecurringInterval,
   RecurringInvoice,
   RecurringInvoiceItem,
@@ -313,35 +312,4 @@ export async function generateInvoiceFromRecurring(
     [now, nextDue, id],
   );
   return invoiceId;
-}
-
-// ----- Snapshot helpers for the editor -----
-
-/**
- * Best-effort: when the user wants "make a template out of this invoice",
- * we mirror its items into a fresh recurring template input shape.
- */
-export function templateInputFromItems(
-  items: Pick<
-    InvoiceItem,
-    | "description"
-    | "quantity"
-    | "unit"
-    | "unitPrice"
-    | "vatRate"
-    | "longDescription"
-    | "linePeriodStart"
-    | "linePeriodEnd"
-  >[],
-): RecurringItemInput[] {
-  return items.map((it) => ({
-    description: it.description,
-    quantity: it.quantity,
-    unit: it.unit,
-    unitPrice: it.unitPrice,
-    vatRate: it.vatRate,
-    longDescription: it.longDescription,
-    linePeriodStart: it.linePeriodStart,
-    linePeriodEnd: it.linePeriodEnd,
-  }));
 }

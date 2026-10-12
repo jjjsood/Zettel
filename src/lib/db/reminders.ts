@@ -401,14 +401,3 @@ export async function deleteReminder(id: number): Promise<void> {
   }
   await execute("DELETE FROM reminders WHERE id = ?", [id]);
 }
-
-export async function dashboardOverdueCount(): Promise<{ count: number; total: number }> {
-  const now = Math.floor(Date.now() / 1000);
-  const [row] = await select<{ c: number; t: number }>(
-    `SELECT COUNT(*) AS c, COALESCE(SUM(total), 0) AS t
-     FROM invoices
-     WHERE status = 'sent' AND due_date < ? AND (is_credit_note IS NULL OR is_credit_note = 0)`,
-    [now],
-  );
-  return { count: row?.c ?? 0, total: row?.t ?? 0 };
-}

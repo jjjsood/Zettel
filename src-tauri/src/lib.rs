@@ -177,7 +177,6 @@ pub fn run() {
     backup::apply_pending_restore_blocking();
 
     tauri::Builder::default()
-        .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_window_state::Builder::default().build())
@@ -199,7 +198,6 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             sidecar::generate_invoice,
             sidecar::generate_offer,
-            sidecar::ping_sidecar,
             sidecar::extract_zugferd,
             sidecar::extract_text_pdf,
             sidecar::generate_reminder,

@@ -6,11 +6,9 @@
     getRecurring,
     updateRecurring,
     type RecurringFormInput,
-    type RecurringItemInput,
   } from "$lib/db/recurring";
-  import { computeLineTotal, computeTotals, getInvoice } from "$lib/db/invoices";
+  import { computeTotals, getInvoice } from "$lib/db/invoices";
   import type { Customer, Settings, RecurringInterval } from "$lib/db/schema";
-  import { centsToEur, eurStringToCents } from "$lib/utils/money";
   import { fromIsoDate, nowUnix, toIsoDate } from "$lib/utils/date";
   import {
     Button,
@@ -19,15 +17,13 @@
     Label,
     Card,
     CardContent,
-    CatalogPicker,
     DatePicker,
-    LinePeriodPopover,
     Select,
     Checkbox,
     toast,
   } from "$lib/ui";
-  import { ArrowLeft, Plus, Trash2, FileText, X, Package } from "@lucide/svelte";
-  import type { CatalogItem } from "$lib/db/schema";
+  import { ArrowLeft } from "@lucide/svelte";
+  import LineItemsEditor, { emptyItem, toLineItem, type LineItem } from "$lib/components/LineItemsEditor.svelte";
 
   type Props = {
     mode: "new" | "edit";
@@ -62,28 +58,7 @@
   let active = $state(true);
   let notes = $state("");
   let paymentTerms = $state("");
-  type ItemUI = RecurringItemInput & {
-    priceText: string;
-    longDescription: string;
-    periodStartIso: string;
-    periodEndIso: string;
-    showDetail: boolean;
-  };
-  function emptyItem(vatRate = 0): ItemUI {
-    return {
-      description: "",
-      quantity: 1,
-      unit: "Stk",
-      unitPrice: 0,
-      vatRate,
-      priceText: "",
-      longDescription: "",
-      periodStartIso: "",
-      periodEndIso: "",
-      showDetail: false,
-    };
-  }
-  let items = $state<ItemUI[]>([emptyItem()]);
+  let items = $state<LineItem[]>([emptyItem()]);
 
   const selectedCustomer = $derived(
     customerIdStr ? customers.find((c) => String(c.id) === customerIdStr) ?? null : null,
@@ -136,18 +111,7 @@
               );
               paymentTermsDays = days || s.defaultPaymentTermsDays;
               if (res.items.length > 0) {
-                items = res.items.map((it) => ({
-                  description: it.description,
-                  quantity: it.quantity,
-                  unit: it.unit,
-                  unitPrice: it.unitPrice,
-                  vatRate: it.vatRate,
-                  priceText: (it.unitPrice / 100).toFixed(2).replace(".", ","),
-                  longDescription: it.longDescription ?? "",
-                  periodStartIso: it.linePeriodStart ? toIsoDate(it.linePeriodStart) : "",
-                  periodEndIso: it.linePeriodEnd ? toIsoDate(it.linePeriodEnd) : "",
-                  showDetail: !!it.longDescription,
-                }));
+                items = res.items.map(toLineItem);
               }
               startDateIso = "";
             }
@@ -177,54 +141,12 @@
           active = res.recurring.active;
           notes = res.recurring.notes ?? "";
           paymentTerms = res.recurring.paymentTerms ?? "";
-          items = res.items.map((it) => ({
-            description: it.description,
-            quantity: it.quantity,
-            unit: it.unit,
-            unitPrice: it.unitPrice,
-            vatRate: it.vatRate,
-            priceText: (it.unitPrice / 100).toFixed(2).replace(".", ","),
-            longDescription: it.longDescription ?? "",
-            periodStartIso: it.linePeriodStart ? toIsoDate(it.linePeriodStart) : "",
-            periodEndIso: it.linePeriodEnd ? toIsoDate(it.linePeriodEnd) : "",
-            showDetail: !!it.longDescription,
-          }));
+          items = res.items.map(toLineItem);
         })
         .catch((e) => (error = String(e)))
         .finally(() => (loaded = true));
     }
   });
-
-  function addItem() {
-    items = [...items, emptyItem(settings?.isKleinunternehmer ? 0 : 19)];
-  }
-
-  let catalogPickerOpen = $state(false);
-  function addFromCatalog(it: CatalogItem) {
-    const vatRate = vatExempt ? 0 : it.defaultVatRate;
-    const next = emptyItem(vatRate);
-    next.description = it.name;
-    next.quantity = 1;
-    next.unit = it.unit;
-    next.unitPrice = it.defaultUnitPrice;
-    next.priceText = (it.defaultUnitPrice / 100).toFixed(2).replace(".", ",");
-    if (it.descriptionDe) {
-      next.longDescription = it.descriptionDe;
-      next.showDetail = true;
-    }
-    items = [...items, next];
-  }
-
-  function removeItem(idx: number) {
-    items = items.filter((_, i) => i !== idx);
-  }
-
-  function onPriceBlur(idx: number) {
-    const it = items[idx];
-    it.unitPrice = eurStringToCents(it.priceText);
-    it.priceText = (it.unitPrice / 100).toFixed(2).replace(".", ",");
-    items = [...items];
-  }
 
   const totals = $derived.by(() => {
     if (!settings) return { subtotal: 0, vatAmount: 0, total: 0 };
@@ -242,12 +164,6 @@
     { value: "monthly", label: "Monatlich" },
     { value: "quarterly", label: "Quartalsweise" },
     { value: "yearly", label: "Jährlich" },
-  ];
-
-  const vatItems = [
-    { value: "0", label: "0 %" },
-    { value: "7", label: "7 %" },
-    { value: "19", label: "19 %" },
   ];
 
   async function onSubmit(e: SubmitEvent) {
@@ -378,139 +294,13 @@
       </CardContent>
     </Card>
 
-    <section>
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="text-sm font-semibold uppercase text-muted-foreground tracking-wider">
-          Positionen
-        </h2>
-        <div class="inline-flex items-center gap-2">
-          <Button type="button" size="sm" variant="outline" onclick={() => (catalogPickerOpen = true)}>
-            <Package />
-            Aus Katalog…
-          </Button>
-          <Button type="button" size="sm" variant="outline" onclick={addItem}>
-            <Plus />
-            Position
-          </Button>
-        </div>
-      </div>
-      <Card class="overflow-hidden py-0">
-        <table class="w-full text-sm">
-          <thead class="bg-muted/40 text-left">
-            <tr class="text-xs uppercase tracking-wider text-muted-foreground">
-              <th class="px-3 py-2 w-10 font-medium">#</th>
-              <th class="px-3 py-2 font-medium">Beschreibung</th>
-              <th class="px-3 py-2 w-20 font-medium">Menge</th>
-              <th class="px-3 py-2 w-20 font-medium">Einheit</th>
-              <th class="px-3 py-2 w-28 font-medium">Preis (€)</th>
-              {#if !vatExempt}
-                <th class="px-3 py-2 w-24 font-medium">USt</th>
-              {/if}
-              <th class="px-3 py-2 w-28 font-medium text-right">Summe</th>
-              <th class="px-3 py-2 w-10 font-medium"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {#each items as it, idx (idx)}
-              <tr class="border-t">
-                <td class="px-3 py-2 text-xs text-muted-foreground align-top pt-3">{idx + 1}</td>
-                <td class="px-2 py-1.5">
-                  <Input bind:value={it.description} required />
-                  {#if it.showDetail}
-                    <div class="mt-1.5">
-                      <Textarea
-                        rows={2}
-                        placeholder="Detail-Beschreibung"
-                        bind:value={it.longDescription}
-                      />
-                    </div>
-                  {/if}
-                  <div class="mt-1.5 flex flex-wrap gap-1.5">
-                    <LinePeriodPopover
-                      bind:startIso={it.periodStartIso}
-                      bind:endIso={it.periodEndIso}
-                    />
-                    {#if it.showDetail}
-                      <button
-                        type="button"
-                        class="inline-flex items-center gap-1 rounded-md border border-input bg-transparent px-2 h-7 text-xs text-muted-foreground hover:bg-accent hover:text-destructive transition-colors cursor-pointer"
-                        onclick={() => {
-                          it.showDetail = false;
-                          it.longDescription = "";
-                          items = [...items];
-                        }}
-                      >
-                        <X class="size-3" /> Detail entfernen
-                      </button>
-                    {:else}
-                      <button
-                        type="button"
-                        class="inline-flex items-center gap-1 rounded-md border border-input bg-transparent px-2 h-7 text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors cursor-pointer"
-                        onclick={() => {
-                          it.showDetail = true;
-                          items = [...items];
-                        }}
-                      >
-                        <FileText class="size-3" /> Detail-Beschreibung
-                      </button>
-                    {/if}
-                  </div>
-                </td>
-                <td class="px-2 py-1.5 align-top pt-1.5">
-                  <Input type="number" step="0.01" min="0" bind:value={it.quantity} />
-                </td>
-                <td class="px-2 py-1.5 align-top pt-1.5"><Input bind:value={it.unit} /></td>
-                <td class="px-2 py-1.5 align-top pt-1.5">
-                  <Input
-                    bind:value={it.priceText}
-                    onblur={() => onPriceBlur(idx)}
-                    placeholder="0,00"
-                    class="text-right"
-                  />
-                </td>
-                {#if !vatExempt}
-                  <td class="px-2 py-1.5 align-top pt-1.5">
-                    <Select
-                      bind:value={
-                        () => String(it.vatRate),
-                        (v) => {
-                          it.vatRate = Number.parseInt(v, 10);
-                          items = [...items];
-                        }
-                      }
-                      items={vatItems}
-                    />
-                  </td>
-                {/if}
-                <td class="px-3 py-2 text-right font-mono text-xs align-top pt-3">
-                  {centsToEur(computeLineTotal(it))}
-                </td>
-                <td class="px-2 py-1.5 text-right align-top pt-1.5">
-                  <button
-                    type="button"
-                    onclick={() => removeItem(idx)}
-                    disabled={items.length === 1}
-                    class="inline-flex items-center justify-center size-8 rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-30 disabled:pointer-events-none transition-colors"
-                    title="Position entfernen"
-                  >
-                    <Trash2 class="size-4" />
-                  </button>
-                </td>
-              </tr>
-            {/each}
-          </tbody>
-          <tfoot class="bg-muted/40 text-sm">
-            <tr class="border-t">
-              <td colspan={vatExempt ? 5 : 6} class="px-3 py-2 text-right font-semibold">
-                Voraussichtlicher Gesamtbetrag pro Erzeugung
-              </td>
-              <td class="px-3 py-2 text-right font-mono font-semibold">{centsToEur(totals.total)}</td>
-              <td></td>
-            </tr>
-          </tfoot>
-        </table>
-      </Card>
-    </section>
+    <LineItemsEditor
+      bind:items
+      {totals}
+      {vatExempt}
+      context="recurring"
+      totalLabel="Voraussichtlicher Gesamtbetrag pro Erzeugung"
+    />
 
     <Card>
       <CardContent class="space-y-4">
@@ -538,5 +328,4 @@
     </div>
   </form>
 
-  <CatalogPicker bind:open={catalogPickerOpen} onPick={addFromCatalog} context="recurring" />
 {/if}

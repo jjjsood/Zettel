@@ -40,6 +40,8 @@
     toast,
   } from "$lib/ui";
   import ValidationBadge from "$lib/components/ValidationBadge.svelte";
+  import DocumentOverview from "$lib/components/DocumentOverview.svelte";
+  import LineItemsTable from "$lib/components/LineItemsTable.svelte";
   import {
     ArrowLeft,
     FileDown,
@@ -805,137 +807,45 @@
     {/if}
   {/if}
 
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-    <Card>
-      <CardContent>
-        <h2 class="text-xs font-semibold uppercase text-muted-foreground tracking-wider mb-3">
-          Kunde (Snapshot)
-        </h2>
-        <div class="text-sm space-y-0.5">
-          <div class="font-medium">{customer.name}</div>
-          {#if customer.contactPerson}<div>{customer.contactPerson}</div>{/if}
-          <div class="text-muted-foreground">{customer.street}</div>
-          <div class="text-muted-foreground">{customer.postalCode} {customer.city}</div>
-          <div class="text-muted-foreground">{customer.country}</div>
-          {#if customer.vatId}
-            <div class="text-xs mt-2 text-muted-foreground">USt-IdNr.: {customer.vatId}</div>
-          {/if}
-        </div>
-      </CardContent>
-    </Card>
+  <DocumentOverview {customer}>
+    <dt class="text-muted-foreground">{invoice.isCreditNote ? "Stornodatum" : "Rechnungsdatum"}</dt>
+    <dd>{formatDate(invoice.issueDate)}</dd>
+    {#if !invoice.isCreditNote}
+      <dt class="text-muted-foreground">Fällig am</dt>
+      <dd>{formatDate(invoice.dueDate)}</dd>
+    {/if}
+    {#if invoice.servicePeriodStart && invoice.servicePeriodEnd}
+      <dt class="text-muted-foreground">Leistungszeitraum</dt>
+      <dd>{formatDate(invoice.servicePeriodStart)} – {formatDate(invoice.servicePeriodEnd)}</dd>
+    {:else if invoice.deliveryDate}
+      <dt class="text-muted-foreground">Leistungsdatum</dt>
+      <dd>{formatDate(invoice.deliveryDate)}</dd>
+    {/if}
+    {#if invoice.sentAt}
+      <dt class="text-muted-foreground">Versendet</dt>
+      <dd>{formatDate(invoice.sentAt)}</dd>
+    {/if}
+    {#if invoice.paidAt}
+      <dt class="text-muted-foreground">Bezahlt</dt>
+      <dd>{formatDate(invoice.paidAt)}</dd>
+    {/if}
+    {#if invoice.currency && invoice.currency !== "EUR"}
+      <dt class="text-muted-foreground">Währung</dt>
+      <dd>
+        <Badge variant="outline">{invoice.currency}</Badge>
+      </dd>
+      {#if invoice.exchangeRate}
+        <dt class="text-muted-foreground">Wechselkurs</dt>
+        <dd class="font-mono">1 EUR = {invoice.exchangeRate} {invoice.currency}</dd>
+      {/if}
+      {#if invoice.eurTotalCent !== null && invoice.eurTotalCent !== undefined}
+        <dt class="text-muted-foreground">Gesamt (EUR)</dt>
+        <dd class="font-mono">{centsToEur(invoice.eurTotalCent)}</dd>
+      {/if}
+    {/if}
+  </DocumentOverview>
 
-    <Card>
-      <CardContent>
-        <h2 class="text-xs font-semibold uppercase text-muted-foreground tracking-wider mb-3">
-          Eckdaten
-        </h2>
-        <dl class="text-sm grid grid-cols-2 gap-y-1.5">
-          <dt class="text-muted-foreground">{invoice.isCreditNote ? "Stornodatum" : "Rechnungsdatum"}</dt>
-          <dd>{formatDate(invoice.issueDate)}</dd>
-          {#if !invoice.isCreditNote}
-            <dt class="text-muted-foreground">Fällig am</dt>
-            <dd>{formatDate(invoice.dueDate)}</dd>
-          {/if}
-          {#if invoice.servicePeriodStart && invoice.servicePeriodEnd}
-            <dt class="text-muted-foreground">Leistungszeitraum</dt>
-            <dd>{formatDate(invoice.servicePeriodStart)} – {formatDate(invoice.servicePeriodEnd)}</dd>
-          {:else if invoice.deliveryDate}
-            <dt class="text-muted-foreground">Leistungsdatum</dt>
-            <dd>{formatDate(invoice.deliveryDate)}</dd>
-          {/if}
-          {#if invoice.sentAt}
-            <dt class="text-muted-foreground">Versendet</dt>
-            <dd>{formatDate(invoice.sentAt)}</dd>
-          {/if}
-          {#if invoice.paidAt}
-            <dt class="text-muted-foreground">Bezahlt</dt>
-            <dd>{formatDate(invoice.paidAt)}</dd>
-          {/if}
-          {#if invoice.currency && invoice.currency !== "EUR"}
-            <dt class="text-muted-foreground">Währung</dt>
-            <dd>
-              <Badge variant="outline">{invoice.currency}</Badge>
-            </dd>
-            {#if invoice.exchangeRate}
-              <dt class="text-muted-foreground">Wechselkurs</dt>
-              <dd class="font-mono">1 EUR = {invoice.exchangeRate} {invoice.currency}</dd>
-            {/if}
-            {#if invoice.eurTotalCent !== null && invoice.eurTotalCent !== undefined}
-              <dt class="text-muted-foreground">Gesamt (EUR)</dt>
-              <dd class="font-mono">{centsToEur(invoice.eurTotalCent)}</dd>
-            {/if}
-          {/if}
-        </dl>
-      </CardContent>
-    </Card>
-  </div>
-
-  <Card class="overflow-hidden mb-6">
-    <table class="w-full text-sm">
-      <thead class="bg-muted/40 text-left">
-        <tr class="text-xs uppercase tracking-wider text-muted-foreground">
-          <th class="px-4 py-3 font-medium w-12">#</th>
-          <th class="px-4 py-3 font-medium">Beschreibung</th>
-          <th class="px-4 py-3 font-medium text-right w-20">Menge</th>
-          <th class="px-4 py-3 font-medium w-20">Einheit</th>
-          <th class="px-4 py-3 font-medium text-right w-28">Preis</th>
-          {#if !invoice.isKleinunternehmer}
-            <th class="px-4 py-3 font-medium text-right w-16">USt%</th>
-          {/if}
-          <th class="px-4 py-3 font-medium text-right w-28">Summe</th>
-        </tr>
-      </thead>
-      <tbody>
-        {#each items as it (it.id)}
-          <tr class="border-t border-border">
-            <td class="px-4 py-3 text-xs text-muted-foreground align-top">{it.position}</td>
-            <td class="px-4 py-3 align-top">
-              <div>{it.description}</div>
-              {#if it.longDescription}
-                <div class="mt-0.5 text-xs text-muted-foreground whitespace-pre-wrap">{it.longDescription}</div>
-              {/if}
-              {#if it.linePeriodStart && it.linePeriodEnd}
-                <div class="mt-0.5 text-xs text-muted-foreground italic">
-                  {#if it.linePeriodStart === it.linePeriodEnd}
-                    Leistungsdatum {formatDate(it.linePeriodStart)}
-                  {:else}
-                    Leistungszeitraum {formatDate(it.linePeriodStart)} – {formatDate(it.linePeriodEnd)}
-                  {/if}
-                </div>
-              {/if}
-            </td>
-            <td class="px-4 py-3 text-right align-top">{it.quantity}</td>
-            <td class="px-4 py-3">{it.unit}</td>
-            <td class="px-4 py-3 text-right font-mono">{formatMoney(it.unitPrice, invoice.currency)}</td>
-            {#if !invoice.isKleinunternehmer}
-              <td class="px-4 py-3 text-right">{it.vatRate}</td>
-            {/if}
-            <td class="px-4 py-3 text-right font-mono">{formatMoney(it.lineTotal, invoice.currency)}</td>
-          </tr>
-        {/each}
-      </tbody>
-      <tfoot class="bg-muted/40">
-        <tr class="border-t border-border">
-          <td colspan={invoice.isKleinunternehmer ? 5 : 6} class="px-4 py-2 text-right text-muted-foreground">
-            Zwischensumme
-          </td>
-          <td class="px-4 py-2 text-right font-mono">{formatMoney(invoice.subtotal, invoice.currency)}</td>
-        </tr>
-        {#if !invoice.isKleinunternehmer}
-          <tr>
-            <td colspan="6" class="px-4 py-2 text-right text-muted-foreground">USt</td>
-            <td class="px-4 py-2 text-right font-mono">{formatMoney(invoice.vatAmount, invoice.currency)}</td>
-          </tr>
-        {/if}
-        <tr class="border-t border-border">
-          <td colspan={invoice.isKleinunternehmer ? 5 : 6} class="px-4 py-3 text-right font-semibold">
-            Gesamtbetrag
-          </td>
-          <td class="px-4 py-3 text-right font-mono font-semibold">{formatMoney(invoice.total, invoice.currency)}</td>
-        </tr>
-      </tfoot>
-    </table>
-  </Card>
+  <LineItemsTable {items} doc={invoice} money={(c) => formatMoney(c, invoice!.currency)} />
 
   {#if invoice.paymentTerms && !invoice.isCreditNote}
     <section class="mb-4">

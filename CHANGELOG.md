@@ -447,7 +447,6 @@ Versionen folgen [Semantic Versioning](https://semver.org/lang/de/).
 - Neues Rust-Modul `crypto.rs` (AES-256-GCM + Argon2id).
 - Neuer Tauri-Command `apply_pending_partial_restore` mit `rusqlite` + `ATTACH DATABASE` für selektive Wiederherstellung.
 - `bundle_backup` packt jetzt auch Angebote-PDFs in den ZIP (war seit v0.3 ein stiller Gap).
-- QA-Report unter `docs/v0.4-qa-report.md`.
 
 ### Known limitations
 - Themes greifen nur für Rechnungen, nicht für Angebote (Follow-up).

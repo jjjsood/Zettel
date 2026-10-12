@@ -409,13 +409,6 @@ export async function markRejected(id: number): Promise<void> {
   );
 }
 
-export async function markExpired(id: number): Promise<void> {
-  await execute(
-    "UPDATE offers SET status = 'expired', updated_at = unixepoch() WHERE id = ? AND status IN ('sent','draft')",
-    [id],
-  );
-}
-
 export async function reopenDraft(id: number): Promise<void> {
   await execute(
     "UPDATE offers SET status = 'draft', sent_at = NULL, accepted_at = NULL, rejected_at = NULL, updated_at = unixepoch() WHERE id = ? AND status IN ('sent','rejected','expired')",

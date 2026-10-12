@@ -200,7 +200,3 @@ export type PdfVersion = {
 export async function listPdfVersions(pdfPath: string): Promise<PdfVersion[]> {
   return invoke<PdfVersion[]>("list_pdf_versions", { path: pdfPath });
 }
-
-export async function pingSidecar(): Promise<SidecarResponse> {
-  return invoke<SidecarResponse>("ping_sidecar");
-}

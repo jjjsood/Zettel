@@ -148,12 +148,6 @@ pub async fn generate_offer(app: AppHandle, payload: Value) -> Result<Value, Str
 }
 
 #[tauri::command]
-pub async fn ping_sidecar(app: AppHandle) -> Result<Value, String> {
-    let request = serde_json::json!({ "command": "ping" });
-    run_sidecar(&app, &request)
-}
-
-#[tauri::command]
 pub async fn extract_zugferd(app: AppHandle, pdf_path: String) -> Result<Value, String> {
     let request = serde_json::json!({
         "command": "extract_zugferd",

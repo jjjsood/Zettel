@@ -21,7 +21,7 @@
   import { generateReminderPdf } from "$lib/sidecar/reminder";
   import { Button, Card, DatePicker, Input, Label, Textarea, toast } from "$lib/ui";
   import { ArrowLeft, FileText, Send, Trash2 } from "@lucide/svelte";
-  import { open as openShell } from "@tauri-apps/plugin-shell";
+  import { openPath } from "@tauri-apps/plugin-opener";
 
   type Mode = "new" | "edit";
   let { mode, params }: { mode: Mode; params: Record<string, string> } = $props();
@@ -173,7 +173,7 @@
       if (res.success) {
         pdfPath = res.pdfPath;
         toast.success("PDF erstellt");
-        await openShell(res.pdfPath);
+        await openPath(res.pdfPath);
       } else {
         toast.error(`PDF fehlgeschlagen: ${res.error.message}`);
       }
@@ -317,7 +317,7 @@
           <div class="font-medium">PDF</div>
           <div class="text-xs text-muted-foreground font-mono">{pdfPath}</div>
         </div>
-        <Button variant="outline" size="sm" onclick={() => pdfPath && openShell(pdfPath)}>
+        <Button variant="outline" size="sm" onclick={() => pdfPath && openPath(pdfPath)}>
           Öffnen
         </Button>
       </div>

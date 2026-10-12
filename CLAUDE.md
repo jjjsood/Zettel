@@ -21,7 +21,7 @@ Offline-first invoice generator for German freelancers / Kleinunternehmer. **Tau
 
 ### Rust (`src-tauri/src/`)
 - `lib.rs` — Plugin-Init, Migrations-Registry, Command-Registrierung. `apply_pending_restore_blocking()` läuft **vor** dem SQL-Plugin-Init, damit ein staged Restore die DB ersetzt, bevor sie geöffnet wird.
-- `sidecar.rs` — spawnt Python-Sidecar (`std::process::Command`, JSON über stdin/stdout). Dev: Script direkt; Release: PyInstaller-Binary aus Tauri-Resources. Tauri-Commands: `generate_invoice`, `generate_offer`, `generate_reminder`, `extract_zugferd`, `extract_text_pdf`, `ping_sidecar`.
+- `sidecar.rs` — spawnt Python-Sidecar (`std::process::Command`, JSON über stdin/stdout). Dev: Script direkt; Release: PyInstaller-Binary aus Tauri-Resources. Tauri-Commands: `generate_invoice`, `generate_offer`, `generate_reminder`, `extract_zugferd`, `extract_text_pdf`, `parse_bank_statement`.
 - `backup.rs` — ZIP-Snapshot (`VACUUM INTO` + PDFs + `manifest.json`). Staged Restore: extrahiert nach `<appdata>/pending_restore/`, Marker-File, dann `apply_pending_partial_restore` (`ATTACH DATABASE` + selektiver `INSERT`). App-Identifier ist hardcoded `digital.laux.zettel` (Pre-Builder hat keinen AppHandle). `CURRENT_SCHEMA` muss mit `user_version` der neuesten Migration matchen — sonst `Schema neuer als App-Version` beim Restore.
 - `crypto.rs` — AES-256-GCM + Argon2id für Backup-Verschlüsselung. Magic-Header `ZETTEL-ENC-1`. Kein gespeichertes Master-Passwort.
 - `fs_export.rs` — `save_text_file` (CSV ohne `plugin-fs`), `import_expense_pdf` (kollisionssichere Ablage `~/Documents/Zettel/Eingangsrechnungen/<vendor>/`).
@@ -104,7 +104,6 @@ Eine neue Migration `000N_<name>.sql` heißt **immer drei Stellen gleichzeitig a
 - `pnpm dev` — Frontend only (DB-Calls schlagen fehl, kein Tauri-API)
 - `pnpm check` — svelte-check
 - `pnpm test` — Vitest
-- `pnpm db:generate` — Drizzle-Migrationen regenerieren
 - `pnpm tauri:build` — Production-Build mit `tauri.bundle.conf.json`-Overlay
 
 ## Sidecar bootstrap (dev)
