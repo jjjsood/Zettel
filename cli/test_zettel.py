@@ -22,7 +22,7 @@ def zettel(tmp_path):
     con.execute("UPDATE settings SET is_kleinunternehmer = 0 WHERE id = 1")  # Default der Migrationen: Kleinunternehmer
     con.commit()
     con.close()
-    env = {**os.environ, "HOME": str(tmp_path), "XDG_DATA_HOME": str(tmp_path)}
+    env = {**os.environ, "HOME": str(tmp_path), "XDG_DATA_HOME": str(tmp_path), "XDG_CONFIG_HOME": str(tmp_path)}
 
     def run(*args, ok=True):
         p = subprocess.run([sys.executable, str(ROOT / "zettel.py"), "--json", *args],

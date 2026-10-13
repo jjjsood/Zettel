@@ -50,11 +50,19 @@ def app_data_dir() -> Path:
     return base / APP_IDENTIFIER
 
 
+def app_config_dir() -> Path:
+    """Wo tauri-plugin-sql relative DB-Pfade ablegt (app_config_dir). Nur unter Linux != app_data_dir."""
+    if sys.platform in ("win32", "darwin"):
+        return app_data_dir()
+    return Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / APP_IDENTIFIER
+
+
 def resolve_db_path() -> Path:
-    """Aktive DB: Sandbox > aktiver Tenant > Standard. Wie resolve_active_url()."""
+    """Aktive DB: Sandbox > aktiver Tenant > Standard. Wie resolve_active_url().
+    Flag-File und tenants.json liegen im Data-Dir, die eingebauten DBs im Config-Dir."""
     d = app_data_dir()
     if (d / "sandbox.flag").exists():
-        return d / "zettel-sandbox.db"
+        return app_config_dir() / "zettel-sandbox.db"
     cfg_path = d / "tenants.json"
     if cfg_path.exists():
         try:
@@ -66,7 +74,7 @@ def resolve_db_path() -> Path:
                         return Path(t["path"])
         except (json.JSONDecodeError, OSError):
             pass
-    return d / "zettel.db"
+    return app_config_dir() / "zettel.db"
 
 
 def connect() -> sqlite3.Connection:
@@ -1346,8 +1354,8 @@ FORMATE
   --fee/--interest (Mahnung)  EUR-Betrag, Punkt oder Komma.
 
 DATENBANK / UMGEBUNG
-  DB-Auswahl wie die App: sandbox.flag -> zettel-sandbox.db, sonst aktiver Mandant, sonst zettel.db im
-  AppData-Ordner. Sandbox-PDFs landen in ~/Documents/Zettel-Sandbox/<Rechnungen|Angebote|Mahnungen>.
+  DB-Auswahl wie die App: sandbox.flag -> zettel-sandbox.db, sonst aktiver Mandant, sonst zettel.db. Linux: DB
+  in ~/.config/digital.laux.zettel/, sandbox.flag/tenants.json/Idempotency-Keys in ~/.local/share/…. Sandbox-PDFs landen in ~/Documents/Zettel-Sandbox/<Rechnungen|Angebote|Mahnungen>.
   Nicht parallel zur laufenden App SCHREIBEN (SQLite single-writer, Timeout 10 s); Lesen ist unkritisch.
   PDF braucht den Sidecar: ZETTEL_SIDECAR=<Pfad zu zettel-sidecar(.exe)> oder installierte App bzw.
   sidecar/.venv im Repo. `zettel-cli status` zeigt, was gefunden wurde. Zuerst `status` aufrufen.

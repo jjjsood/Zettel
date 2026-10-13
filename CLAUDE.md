@@ -121,7 +121,7 @@ python build.py            # PyInstaller-Bundle nach sidecar/dist/
 ## AppData locations
 - **Windows:** `%APPDATA%\digital.laux.zettel\` (DB, `sandbox.flag`, `pending_restore/`)
 - **macOS:** `~/Library/Application Support/digital.laux.zettel/`
-- **Linux:** `~/.local/share/digital.laux.zettel/`
+- **Linux:** `~/.local/share/digital.laux.zettel/` (`sandbox.flag`, `tenants.json`, `pending_restore/`) — **die DBs (`zettel.db`, `zettel-sandbox.db`) liegen aber in `~/.config/digital.laux.zettel/`**, weil tauri-plugin-sql relative Pfade unter `app_config_dir` auflöst (Windows/macOS: identisch mit data_dir)
 - **PDFs:** `~/Documents/Zettel/{Rechnungen,Angebote,Mahnungen,Eingangsrechnungen/<vendor>}/`
 
 ## Git workflow
