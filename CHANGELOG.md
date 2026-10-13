@@ -6,6 +6,10 @@ Versionen folgen [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Fixed
+- **Linux: Backup-Wiederherstellung traf die falsche DB.** Voll- und Teil-Restore schrieben nach `~/.local/share/digital.laux.zettel/zettel.db`, die App liest aber `~/.config/digital.laux.zettel/zettel.db` (tauri-plugin-sql nutzt `app_config_dir`). Windows/macOS waren nicht betroffen (gleicher Ordner). Der Restore-Test läuft jetzt in `cargo test`.
+- **CLI unter Linux:** findet die DB jetzt im Config-Ordner.
+
 ### Added
 - **CLI: Kunden, Angebote, Mahnungen.** `customer:create`, `offers`/`offer:{create,show,send,accept,reject,convert,pdf}`, `reminders`/`reminder:{create,send,pdf}`, `invoices --overdue`. PDFs für Rechnung, Angebot und Mahnung laufen über denselben Sidecar-Pfad.
 - **CLI im Installer.** `zettel-cli` wird als Binary mitgeliefert (Linux: `/usr/bin/zettel-cli` per `.deb`, Windows: `<Install>\cli\zettel-cli.exe`); Pfad unter Einstellungen → Erweitert → Kommandozeile.

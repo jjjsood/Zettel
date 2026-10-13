@@ -64,6 +64,12 @@ fn app_data_dir(app: &AppHandle) -> Result<PathBuf, String> {
     app.path().app_data_dir().map_err(|e| e.to_string())
 }
 
+/// Where tauri-plugin-sql keeps the built-in `sqlite:zettel.db`. Differs from
+/// the data dir on Linux (`~/.config` vs `~/.local/share`); identical elsewhere.
+fn app_config_dir(app: &AppHandle) -> Result<PathBuf, String> {
+    app.path().app_config_dir().map_err(|e| e.to_string())
+}
+
 fn documents_zettel_dir(app: &AppHandle) -> Result<PathBuf, String> {
     let doc = app.path().document_dir().map_err(|e| e.to_string())?;
     Ok(doc.join("Zettel"))
@@ -73,6 +79,10 @@ fn documents_zettel_dir(app: &AppHandle) -> Result<PathBuf, String> {
 /// startup (before the Tauri builder has a chance to initialize plugins).
 fn app_data_dir_static() -> Option<PathBuf> {
     dirs::data_dir().map(|d| d.join(APP_IDENTIFIER))
+}
+
+fn app_config_dir_static() -> Option<PathBuf> {
+    dirs::config_dir().map(|d| d.join(APP_IDENTIFIER))
 }
 
 fn documents_zettel_dir_static() -> Option<PathBuf> {
@@ -351,7 +361,9 @@ pub fn apply_pending_restore_blocking() {
 
     let pending_db = pending_root.join(DB_ENTRY);
     if pending_db.is_file() {
-        let target = data_dir.join("zettel.db");
+        let config_dir = app_config_dir_static().unwrap_or_else(|| data_dir.clone());
+        let _ = fs::create_dir_all(&config_dir);
+        let target = config_dir.join("zettel.db");
         if target.exists() {
             let bak = target.with_extension("db.bak");
             let _ = fs::rename(&target, &bak);
@@ -415,7 +427,7 @@ pub async fn apply_pending_partial_restore(app: AppHandle) -> Result<(), String>
         }
     };
 
-    let live_db = data_dir.join("zettel.db");
+    let live_db = app_config_dir(&app)?.join("zettel.db");
     let staged_db = pending_root.join(DB_ENTRY);
     if !staged_db.is_file() {
         return Err("Backup-Datenbank fehlt im pending-Ordner.".into());
@@ -517,4 +529,34 @@ fn chrono_like_now() -> String {
         .map(|d| d.as_secs())
         .unwrap_or(0);
     format!("unix:{}", secs)
+}
+
+#[cfg(all(test, target_os = "linux"))]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn full_restore_replaces_db_in_config_dir() {
+        let root = std::env::temp_dir().join(format!("zettel-restore-test-{}", std::process::id()));
+        let (data, config) = (root.join("data"), root.join("config"));
+        let _ = fs::remove_dir_all(&root);
+        std::env::set_var("XDG_DATA_HOME", &data);
+        std::env::set_var("XDG_CONFIG_HOME", &config);
+
+        let data_dir = data.join(APP_IDENTIFIER);
+        let config_dir = config.join(APP_IDENTIFIER);
+        fs::create_dir_all(data_dir.join(PENDING_DIR)).unwrap();
+        fs::create_dir_all(&config_dir).unwrap();
+        fs::write(data_dir.join(PENDING_DIR).join(DB_ENTRY), b"new").unwrap();
+        fs::write(data_dir.join(PENDING_MARKER), b"pending").unwrap();
+        fs::write(config_dir.join("zettel.db"), b"old").unwrap();
+
+        apply_pending_restore_blocking();
+
+        assert_eq!(fs::read(config_dir.join("zettel.db")).unwrap(), b"new");
+        assert_eq!(fs::read(config_dir.join("zettel.db.bak")).unwrap(), b"old");
+        assert!(!data_dir.join("zettel.db").exists());
+        assert!(!data_dir.join(PENDING_MARKER).exists());
+        let _ = fs::remove_dir_all(&root);
+    }
 }

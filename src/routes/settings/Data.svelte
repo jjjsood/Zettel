@@ -420,7 +420,7 @@
   <ConfirmDialog
     bind:open={confirmRestoreOpen}
     title="Backup wiederherstellen?"
-    description={`Die aktuelle Datenbank und alle PDFs werden ersetzt. Die alte DB landet als zettel.db.bak im App-Datenverzeichnis. Die App muss anschließend neu gestartet werden.\n\nQuelle: ${pendingRestoreZip ?? ""}`}
+    description={`Die aktuelle Datenbank und alle PDFs werden ersetzt. Die alte DB landet als zettel.db.bak neben der Datenbank. Die App muss anschließend neu gestartet werden.\n\nQuelle: ${pendingRestoreZip ?? ""}`}
     confirmLabel="Wiederherstellen"
     cancelLabel="Abbrechen"
     onConfirm={onConfirmRestore}
