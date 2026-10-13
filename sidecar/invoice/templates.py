@@ -31,6 +31,11 @@ def cents_to_eur(cents: int | float | None, currency: str | None = "EUR") -> str
     return s.replace(",", "X").replace(".", ",").replace("X", ".") + f" {suffix}"
 
 
+def fmt_iban(iban: str | None) -> str:
+    s = "".join(ch for ch in iban or "" if ch.isalnum()).upper()
+    return " ".join(s[i : i + 4] for i in range(0, len(s), 4))
+
+
 def fmt_qty(q: float | int) -> str:
     if float(q).is_integer():
         return str(int(q))
@@ -56,6 +61,7 @@ def build_env() -> Environment:
     )
     env.filters["eur"] = cents_to_eur
     env.filters["qty"] = fmt_qty
+    env.filters["iban"] = fmt_iban
     env.filters["date_unix"] = fmt_date_unix
     # `t()` ist als globale Funktion verfügbar; Templates rufen
     # {{ t('schluessel', language) }} oder mit kwargs für Interpolation.

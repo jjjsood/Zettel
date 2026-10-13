@@ -19,6 +19,7 @@
     toast,
   } from "$lib/ui";
   import { Image, X, ChevronLeft, ChevronRight } from "@lucide/svelte";
+  import { formatIban, isValidIban } from "$lib/utils/iban";
   import { centsToEur, eurStringToCents } from "$lib/utils/money";
   import {
     listPrepayments,
@@ -379,7 +380,14 @@
             </div>
             <div class="flex flex-col gap-1.5">
               <Label>IBAN</Label>
-              <Input bind:value={s.bankIban} />
+              <Input
+                bind:value={s.bankIban}
+                aria-invalid={!!s.bankIban && !isValidIban(s.bankIban)}
+                onblur={() => s && (s.bankIban = formatIban(s.bankIban ?? ""))}
+              />
+              {#if s.bankIban && !isValidIban(s.bankIban)}
+                <p class="text-destructive text-xs">IBAN-Prüfsumme ungültig.</p>
+              {/if}
             </div>
             <div class="flex flex-col gap-1.5">
               <Label>BIC</Label>

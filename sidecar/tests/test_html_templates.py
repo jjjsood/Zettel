@@ -235,7 +235,7 @@ class TestInvoiceHtml:
     def test_footer_company_data(self, payloads):
         html = _invoice(payloads)
         footer = html.split('<footer class="doc-footer">')[1]
-        assert "DE89370400440532013000" in footer and "COBADEFFXXX" in footer
+        assert "DE89 3704 0044 0532 0130 00" in footer and "COBADEFFXXX" in footer
         assert "DE123456789" in footer and "12/345/67890" in footer
 
     def test_logo_rendered_only_when_present(self, payloads):
@@ -313,7 +313,7 @@ class TestReminderHtml:
 
     def test_bank_block_and_payment_reference(self, payloads):
         html = _reminder(payloads)
-        assert "IBAN: DE89370400440532013000" in html
+        assert "IBAN: DE89 3704 0044 0532 0130 00" in html
         assert "BIC: COBADEFFXXX" in html
         assert "Verwendungszweck: RE-2026-0007" in html
 
@@ -327,3 +327,11 @@ class TestReminderHtml:
 
     def test_no_none_literal(self, payloads):
         assert "None" not in re.sub(r"<[^>]+>", " ", _reminder(payloads))
+
+
+def test_iban_filter_groups_by_four():
+    from invoice.templates import fmt_iban
+
+    assert fmt_iban("de89370400440532013000") == "DE89 3704 0044 0532 0130 00"
+    assert fmt_iban("DE89 3704-0044 0532 0130 00") == "DE89 3704 0044 0532 0130 00"
+    assert fmt_iban(None) == ""

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { formatIban, isValidIban } from "$lib/utils/iban";
   import { link, push } from "svelte-spa-router";
   import {
     createVendor,
@@ -175,7 +176,14 @@
           </div>
           <div class="flex flex-col gap-1.5">
             <Label>IBAN</Label>
-            <Input bind:value={form.bankIban} />
+            <Input
+              bind:value={form.bankIban}
+              aria-invalid={!!form.bankIban && !isValidIban(form.bankIban)}
+              onblur={() => (form.bankIban = formatIban(form.bankIban ?? ""))}
+            />
+            {#if form.bankIban && !isValidIban(form.bankIban)}
+              <p class="text-destructive text-xs">IBAN-Prüfsumme ungültig.</p>
+            {/if}
           </div>
           <div class="flex flex-col gap-1.5">
             <Label>BIC</Label>

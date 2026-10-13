@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { formatIban, isValidIban } from "$lib/utils/iban";
   import { loadSettings, saveSettings } from "$lib/db/queries";
   import type { Settings } from "$lib/db/schema";
   import {
@@ -226,7 +227,14 @@
               </div>
               <div class="flex flex-col gap-1.5">
                 <Label>IBAN</Label>
-                <Input bind:value={bankIban} placeholder="DE…" />
+                <Input placeholder="DE…"
+                bind:value={bankIban}
+                aria-invalid={!!bankIban && !isValidIban(bankIban)}
+                onblur={() => (bankIban = formatIban(bankIban ?? ""))}
+              />
+              {#if bankIban && !isValidIban(bankIban)}
+                <p class="text-destructive text-xs">IBAN-Prüfsumme ungültig.</p>
+              {/if}
               </div>
               <div class="flex flex-col gap-1.5">
                 <Label>BIC</Label>

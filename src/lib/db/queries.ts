@@ -1,3 +1,4 @@
+import { formatIban } from "$lib/utils/iban";
 import { execute, select } from "./client";
 import type { Customer, Settings, Vendor } from "./schema";
 
@@ -81,7 +82,7 @@ function mapSettings(r: SettingsRow): Settings {
     phone: r.phone,
     website: r.website,
     bankName: r.bank_name,
-    bankIban: r.bank_iban,
+    bankIban: r.bank_iban && formatIban(r.bank_iban),
     bankBic: r.bank_bic,
     isKleinunternehmer: r.is_kleinunternehmer === 1,
     kleinunternehmerNote: r.kleinunternehmer_note,
@@ -446,7 +447,7 @@ function mapVendor(r: VendorRow): Vendor {
     phone: r.phone,
     vatId: r.vat_id,
     bankName: r.bank_name,
-    bankIban: r.bank_iban,
+    bankIban: r.bank_iban && formatIban(r.bank_iban),
     bankBic: r.bank_bic,
     defaultCategory: r.default_category,
     notes: r.notes,
